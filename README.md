@@ -36,7 +36,7 @@ media_player:
 All existing features of the original Component are supported:
 https://www.home-assistant.io/integrations/soundtouch/
 
-New - To make a snapshot from what us currently playing:
+1. To make a snapshot from what us currently playing:
 ```yaml
 service: soundtouch.snapshot
 data:
@@ -44,9 +44,9 @@ data:
 ```
 (volume will by default also be added to the snapshot)
 
-Then you can change the source and the volume.
+2. Then you can change the source and the volume.
 
-New - To restore the earlier created snapshot:
+3. To restore the earlier created snapshot:
 ```yaml
 service: soundtouch.snapshot
 data:
