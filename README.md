@@ -1,7 +1,7 @@
-# PyLoxone
+# Bose Soundtouch
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
-Home Assistant custom component for Bose SoundTouch. 
+Home Assistant custom component for Bose SoundTouch with snapshot and restore.
 
 ## Manual installation
 1. Download the zip file and extract all files into your `config` directory.
