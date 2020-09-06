@@ -14,6 +14,8 @@ hass.py
 *.log
 *.json
 !hacs.json
+!manifest.json
+!services.yaml
 /venv/
 
 __pycache__
