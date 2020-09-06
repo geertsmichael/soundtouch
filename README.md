@@ -18,8 +18,8 @@ media_player:
 
 ## Hacs installation
 1. Install hacs to your homeassistant installation. See https://hacs.xyz/docs/installation/manual
-2. Add this repository to hacs: https://github.com/JoDehli/PyLoxone
-3. Install the PyLoxone binding
+2. Add this repository to hacs: https://github.com/geertsmichael/soundtouch
+3. Install the Soundtouch integration
 4. Add the following section to your `configuration.yaml` and restart:
 
 ```yaml
