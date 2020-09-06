@@ -69,7 +69,7 @@ script:
         example: 'This is a test message.'
       volume:
         description: 'Volume between 0 and 1'
-        example: "0.1"
+        example: '0.1'
       delay:
         description: 'Time to take to play the message'
         example: '00:00:10'
@@ -84,7 +84,7 @@ script:
       - service: tts.google_translate_say
         data_template:
           entity_id: "{{entity}}"
-          message: '{{message}}'
+          message: "{{message}}"
       - delay: "{{delay}}"
       - service: soundtouch.restore
         data_template:
