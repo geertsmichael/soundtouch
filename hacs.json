@@ -1,7 +1,7 @@
 {
-  "name": "Soundtouch snapshot & restore",
+  "name": "Soundtouch 2.0",
   "country": "BE",
-  "hacs": "1.0.0",
+  "hacs": "1.1.0",
   "render_readme": true,
   "domains": ["media_player"],
   "homeassistant": "0.109.0"
