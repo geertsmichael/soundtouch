@@ -48,3 +48,22 @@ restore:
     entity_id:
       description: Name(s) of entities that will be restored.
       example: "media_player.soundtouch_home"
+    restore_volume:
+      description: True (default) or False. Indicates if the volume also needs to be restored.
+      example: "false"
+
+handoff:
+  description: Handoff playing source from 1 SoundTouch to another.
+  fields:
+    from:
+      description: Name of the entity that is currently playing
+      example: "media_player.soundtouch_home"
+    to:
+      description: Name of entity that needs to play what the 'from' entity was playing.
+      example: "media_player.soundtouch_bedroom"
+    restore_volume:
+      description: True or False (default). Indicates if the volume also needs to be handoffed.
+      example: "true"
+    snapshot_only:
+      description: True or False (default). Indicates if only the snapshot needs to be handoffed, but does't trigger the restore and power off.
+      example: "true"

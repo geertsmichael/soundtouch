@@ -42,6 +42,7 @@ from .const import (
     SERVICE_REMOVE_ZONE_SLAVE,
     SERVICE_SNAPSHOT,
     SERVICE_RESTORE,
+    SERVICE_HANDOFF,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,18 +58,36 @@ DATA_SOUNDTOUCH = "soundtouch"
 ATTR_SOUNDTOUCH_GROUP = "soundtouch_group"
 ATTR_SOUNDTOUCH_ZONE = "soundtouch_zone"
 
-SOUNDTOUCH_PLAY_EVERYWHERE = vol.Schema({vol.Required("master"): cv.entity_id})
+SOUNDTOUCH_PLAY_EVERYWHERE = vol.Schema(
+    {vol.Required("master"): cv.entity_id}
+)
 
 SOUNDTOUCH_CREATE_ZONE_SCHEMA = vol.Schema(
-    {vol.Required("master"): cv.entity_id, vol.Required("slaves"): cv.entity_ids}
+    {vol.Required("master"): cv.entity_id,
+    vol.Required("slaves"): cv.entity_ids}
 )
 
 SOUNDTOUCH_ADD_ZONE_SCHEMA = vol.Schema(
-    {vol.Required("master"): cv.entity_id, vol.Required("slaves"): cv.entity_ids}
+    {vol.Required("master"): cv.entity_id,
+    vol.Required("slaves"): cv.entity_ids}
 )
 
 SOUNDTOUCH_REMOVE_ZONE_SCHEMA = vol.Schema(
-    {vol.Required("master"): cv.entity_id, vol.Required("slaves"): cv.entity_ids}
+    {vol.Required("master"): cv.entity_id,
+    vol.Required("slaves"): cv.entity_ids}
+)
+
+SOUNDTOUCH_HANDOFF_SCHEMA = vol.Schema(
+    {vol.Required("from"): cv.entity_id,
+    vol.Required("to"): cv.entity_id,
+    vol.Optional("restore_volume", default=False): cv.boolean,
+    vol.Optional("snapshot_only", default=False): cv.boolean}
+)
+
+SOUNDTOUCH_SNAPSHOT_SCHEMA = cv.make_entity_service_schema({})
+
+SOUNDTOUCH_RESTORE_SCHEMA = cv.make_entity_service_schema(
+    {vol.Optional("restore_volume", default=True): cv.boolean}
 )
 
 DEFAULT_NAME = "Bose Soundtouch"
@@ -148,7 +167,59 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
             if call.service == SERVICE_SNAPSHOT:
                 selected_device.snapshot()
             elif call.service == SERVICE_RESTORE:
-                selected_device.restore()
+                restore_volume = call.data.get("restore_volume")
+                selected_device.restore(restore_volume)
+
+    def service_handle_handoff(call):
+        """Handles handoff of the playing media to another device."""
+        from_device = call.data.get("from")
+        to_device = call.data.get("to")
+        snapshot_only = call.data.get("snapshot_only")
+
+        selected_from_device = next(
+            [
+                device
+                for device in hass.data[DATA_SOUNDTOUCH]
+                if device.entity_id == from_device
+            ].__iter__(),
+            None,
+        )
+
+        selected_to_device = next(
+            [
+                device
+                for device in hass.data[DATA_SOUNDTOUCH]
+                if device.entity_id == to_device
+            ].__iter__(),
+            None,
+        )
+
+        if selected_from_device is None:
+            _LOGGER.warning(
+                "Unable to find SoundTouch device (from) with entity_id: %s", str(from_device)
+            )
+            return
+
+        if selected_to_device is None:
+            _LOGGER.warning(
+                "Unable to find SoundTouch device (to) with entity_id: %s", str(to_device)
+            )
+            return
+
+        #Snapshot of FROM
+        selected_from_device.snapshot()
+
+        #Transition snapshots
+        selected_to_device._device._snapshotVolume = selected_from_device._device._snapshotVolume
+        selected_to_device._device._snapshot = selected_from_device._device._snapshot
+
+        if not snapshot_only:
+            #Restore to TO
+            restore_volume = call.data.get("restore_volume")
+            selected_to_device.restore(restore_volume)
+
+            #turn off
+            selected_from_device.turn_off()
 
     def service_handle(service):
         """Handle the applying of a service."""
@@ -218,14 +289,21 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         DOMAIN,
         SERVICE_SNAPSHOT,
         service_handle_snapshot_restore,
-        cv.make_entity_service_schema({})
+        schema=SOUNDTOUCH_SNAPSHOT_SCHEMA,
     )
 
     hass.services.register(
         DOMAIN,
         SERVICE_RESTORE,
         service_handle_snapshot_restore,
-        cv.make_entity_service_schema({})
+        schema=SOUNDTOUCH_RESTORE_SCHEMA,
+    )
+
+    hass.services.register(
+        DOMAIN,
+        SERVICE_HANDOFF,
+        service_handle_handoff,
+        schema=SOUNDTOUCH_HANDOFF_SCHEMA
     )
 
 class SoundTouchDevice(MediaPlayerEntity):
@@ -355,15 +433,15 @@ class SoundTouchDevice(MediaPlayerEntity):
             "Making snapshot: %s %s", self._device._snapshot, self._device._snapshotVolume
         )
 
-    def restore(self):
+    def restore(self, restore_volume):
         """Restore media player."""
         #self._device.restore()
 
         """Restore media player."""
-        if self._device._snapshotVolume:
+        if self._device._snapshotVolume and restore_volume:
             self.set_volume_level(self._device._snapshotVolume)
 
-        if self._device._snapshot:
+        if self._device._snapshot: #and self._device._snapshot.source not in [Source.INVALID_SOURCE]
             self._device.select_content_item(Source[self._device._snapshot.source],
                                      self._device._snapshot.source_account,
                                      self._device._snapshot.location,
@@ -603,3 +681,4 @@ class Source(Enum):
     INVALID_SOURCE = "INVALID_SOURCE"
     TUNEIN = "TUNEIN"
     PRODUCT = "PRODUCT"
+    UPNP = "UPNP"
