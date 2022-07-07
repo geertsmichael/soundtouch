@@ -1,6 +1,5 @@
 {
   "domain": "soundtouch",
-  "version": "1.0.0",
   "name": "Bose Soundtouch",
   "documentation": "https://www.home-assistant.io/integrations/soundtouch",
   "requirements": ["libsoundtouch==0.8"],
